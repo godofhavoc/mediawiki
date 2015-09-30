@@ -26,8 +26,6 @@ def compute(url):
             tot_links[pop_links[x]] = q.count
         except:
             print(pop_links[x])
-            if(pop_links[x] == 'Australia'):
-                continue;
             for result in query(
                 {'prop': 'linkshere', 'lhlimit': 'max', 'titles': pop_links[x]}
             ):
