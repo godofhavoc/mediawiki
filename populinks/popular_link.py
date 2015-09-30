@@ -1,28 +1,47 @@
 import re
 import requests
+from .models import QueryLinks
 
 def compute(url):
-    link_pops = {}
+    pop_links =[]
+    tot_links = {}
     title = 'Sachin_Tendulkar'
+
     for result in query({'prop': 'links', 'pllimit': 'max', 'titles': title}):
         pages = result['pages']
         for key, val in pages.items():
             links = val['links']
 
         for val2 in links:
-            val2['title'] = val2['title'].strip()
-            val2['title'] = val2['title'].replace(" ", "_")
-            for result2 in query({'prop': 'linkshere', 'lhlimit': 'max', 'titles': val2['title']}):
-                pages2 = result2['pages']
-                for key3, val3 in pages.items():
-                    out_links = val3['links']
+            #link_pops = 0
+            title2 = val2['title']
+            title2 = title2.strip()
+            title2 = title2.replace(" ", "_")
+            pop_links.append(title2)
 
-                if val2['title'] in link_pops.keys():
-                    link_pops[val2['title']] += len(out_links)
-                else:
-                    link_pops[val2['title']] = len(out_links)
+    for x in range(len(pop_links)):
 
-    return max(link_pops, key=lambda key: stats[key])
+        try:
+            q = QueryLinks.objects.get(title=pop_links[x])
+            tot_links[pop_links[x]] = q.count
+        except:
+            print(pop_links[x])
+            if(pop_links[x] == 'Australia'):
+                continue;
+            for result in query(
+                {'prop': 'linkshere', 'lhlimit': 'max', 'titles': pop_links[x]}
+            ):
+                pages = result['pages']
+                for key, val in pages.items():
+                    links = val['linkshere']
+                    if pop_links[x] in tot_links:
+                        tot_links[pop_links[x]] += len(links)
+                    else:
+                        tot_links[pop_links[x]] = len(links)
+            q = QueryLinks(title=pop_links[x], count=tot_links[pop_links[x]])
+            q.save()
+
+    print(max(tot_links, key=lambda key: tot_links[key]))
 
 def query(request):
     request['action'] = 'query'
@@ -37,4 +56,3 @@ def query(request):
         if 'query' in result: yield result['query']
         if 'continue' not in result: break
         lastContinue = result['continue']
-        return result['query']
